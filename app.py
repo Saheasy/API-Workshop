@@ -1,48 +1,64 @@
-# app.py
-from my_requests import data_spencer
-from flask import Flask, request
-from flask_restful import Resource, Api
+# import relevant modules
+from flask import Flask, jsonify, request
+from flask_restful import Api, Resource, reqparse, abort
 
+# create Flask app
 app = Flask(__name__)
+
+# create API object
 api = Api(app)
 
-
-class TodoSimple(Resource):
-    def __init__(self):
-        self.data = {
-            "spencer_sahu": {
-                "first_name": "Spencer",
-                "last_name": "Sahu",
-                "nickname": "Duck",
-                "pathfinders_group": "Protozoic",
-                "location":"Iowa City"
-            },
-            "edwin_duggirala": {
-                "first_name": "Edwin",
-                "last_name": "Duggirala",
-                "nickname": "Edlose",
-                "pathfinders_group": "Protozoic",
-                "location":"San Antonio"
-            }
+# create 'database'
+apprentices = {
+            1: {"name": "Edwin Duggirala", "group": "protozoic"},
+            2: {"name": "Spencer Sahu", "group": "protzoic"}
         }
-        self.spencer = data_spencer
+
+apprentice_POST_args = reqparse.RequestParser()
+apprentice_POST_args.add_argument("name", type = str, help = "Name is required.", required = True)
+apprentice_POST_args.add_argument("group", type = str, help = "Name is required.", required = True)
+
+apprentice_PUT_args = reqparse.RequestParser()
+apprentice_PUT_args.add_argument("name", type = str)
+apprentice_PUT_args.add_argument("group", type = str)
+
+
+# create class for only the list of apprentices
+class apprentice_list(Resource):
+
     def get(self):
-        return self.data
+        return apprentices
 
-    def put(self, id):
-        self.data[id] = request.form['data']
-        return self.data
 
-    def post(self, id):
-        self.data[id] = request.form['data']
-        return self.data
+# create class for apprentice, make it a resource, get all data on apprentices
+class apprentice(Resource):  
 
-    def delete(self, id):
-        del self.data[id]
-        return self.data
+    def get(self, apprentice_id):
+        return apprentices[apprentice_id]
 
-api.add_resource(TodoSimple,'/<string:id>')
+    def post(self, apprentice_id):
+        args = apprentice_POST_args.parse_args()
+        if apprentice_id in apprentices:
+            abort(409, "Apprentice information already exists")
+        apprentices[apprentice_id] = {"name": args["name"], "group": args["group"]}
+        return apprentices[apprentice_id]
 
-# We only need this for local development.
-if __name__ == '__main__':
- app.run()
+    def put(self, apprentice_id):
+        args = apprentice_PUT_args.parse_args()
+        if apprentice_id not in apprentices:
+            abort(404, message = "Apprentice does not exist. Cannot update.")
+        if args["name"]:
+            apprentices[apprentice_id]["name"] = args["name"]
+        if args["group"]:
+            apprentices[apprentice_id]["group"] = args["group"]
+        return apprentices[apprentice_id]
+
+    def delete(self, apprentice_id):
+        del apprentices[apprentice_id]
+        return apprentices
+
+api.add_resource(apprentice_list, "/apprentices")
+api.add_resource(apprentice, "/apprentices/<int:apprentice_id>")
+
+if __name__ == "__main__":
+    app.run(debug=True)
