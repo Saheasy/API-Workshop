@@ -60,15 +60,13 @@ class apiAWS:
         #Just to see what is in the table
         return self.table.scan()['Items']
 
-    def post_data(self, full_name, nickname, first_name, last_name, pathfinders_group, location):
+    def post_data(self, full_name, nickname, group, location):
         # This is the equilivant of a post request, as it overwrites everything that's assigned to the 'full_name'
         self.table.put_item(
             Item={
                 'full_name':full_name,
                 'nickname':nickname,
-                'first_name':first_name,
-                'last_name':last_name,
-                'pathfinders_group':pathfinders_group,
+                'pathfinders_group':group,
                 'location': location
             })
 
@@ -96,8 +94,9 @@ class apiAWS:
 
 if __name__ == '__main__':
     hello = apiAWS('temp-AGC', 'API_Project')
-    hello.post_data('spencer_sahu', "duck", 'spencer', 'sahu', 'protozoic', 'Iowa City')
+    hello.post_data('spencer_sahu', "duck", 'protozoic', 'Iowa City')
     #hello.post_data('edwin_duggirala', "edlose", 'edwin', 'durggirala', 'protozoic', 'San Antonio')
-    hello.put_data('spencer_sahu', 'gender', 'male')
+    #hello.put_data('spencer_sahu', 'gender', 'male')
     hello.put_data('spencer_sahu', 'nickname', 'Spence')
     hello.info()
+    #hello.delete_table()
