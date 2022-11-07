@@ -35,12 +35,15 @@ class apprentice_list(Resource):
 class apprentice(Resource):  
 
     def get(self, apprentice_id):
-        return apprentices[apprentice_id]
+        try:
+            return apprentices[apprentice_id]
+        except:
+            abort(404, message="Apprentice ID not in database")
 
     def post(self, apprentice_id):
         args = apprentice_POST_args.parse_args()
         if apprentice_id in apprentices:
-            abort(409, "Apprentice information already exists")
+            abort(409, message="Apprentice information already exists")
         apprentices[apprentice_id] = {"name": args["name"], "group": args["group"]}
         return apprentices[apprentice_id]
 
@@ -83,12 +86,15 @@ class AwsApprenticeList(Resource):
 class AwsApprentice(Resource):  
 
     def get(self, apprentice_id):
-        return apprentices[apprentice_id]
+        try:
+            return apprentices[apprentice_id]
+        except:
+            abort(404, message="Apprentice ID not in database")
 
     def post(self, apprentice_id):
         args = apprentice_POST_args.parse_args()
         if apprentice_id in apprentices:
-            abort(409, "Apprentice information already exists")
+            abort(409, message="Apprentice information already exists")
         apprentices[apprentice_id] = {"name": args["name"], "group": args["group"]}
         return apprentices[apprentice_id]
 
