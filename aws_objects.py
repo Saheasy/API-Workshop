@@ -85,6 +85,9 @@ class apiAWS:
             ExpressionAttributeValues={ ':value':value  }
         )
     
+    def get_data(self, full_name):
+        return self.table.get_item(Key={'full_name':full_name} )['Item']
+
     def delete_data(self, full_name):
         self.table.delete_item(Key={'full_name':full_name})
 

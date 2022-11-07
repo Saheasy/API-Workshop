@@ -1,6 +1,7 @@
 # import relevant modules
 from flask import Flask, jsonify, request
 from flask_restful import Api, Resource, reqparse, abort
+from aws_objects import apiAWS
 
 # create Flask app
 app = Flask(__name__)
@@ -67,6 +68,9 @@ api.add_resource(apprentice, "/apprentices/<int:apprentice_id>")
 
 
 # Flask API with DynamoDB
+# Initialized the apiAWS class, which checks for/creates a dynamodb
+aws = apiAWS('temp-AGC', 'API_Project')
+
 aws_apprentice_POST_args = reqparse.RequestParser()
 aws_apprentice_POST_args.add_argument("name", type = str, help = "Name is required.", required = True)
 aws_apprentice_POST_args.add_argument("group", type = str, help = "Name is required.", required = True)
@@ -79,17 +83,13 @@ aws_apprentice_PUT_args.add_argument("group", type = str)
 # create class for only the list of apprentices
 class AwsApprenticeList(Resource):
     def get(self):
-        return apprentices
-
+        return aws.info()
 
 # create class for apprentice, make it a resource, get all data on apprentices
 class AwsApprentice(Resource):  
 
     def get(self, apprentice_id):
-        try:
-            return apprentices[apprentice_id]
-        except:
-            abort(404, message="Apprentice ID not in database")
+        return aws.get_data(apprentice_id)
 
     def post(self, apprentice_id):
         args = apprentice_POST_args.parse_args()
@@ -113,7 +113,7 @@ class AwsApprentice(Resource):
         return apprentices
 
 api.add_resource(AwsApprenticeList, "/aws")
-api.add_resource(AwsApprentice, "/aws/<int:apprentice_id>")
+api.add_resource(AwsApprentice, "/aws/<string:apprentice_id>")
 
 if __name__ == "__main__":
     app.run(debug=True)
