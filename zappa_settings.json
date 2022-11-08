@@ -4,7 +4,7 @@
         "profile_name": "temp-AGC",
         "project_name": "api-workshop",
         "runtime": "python3.9",
-        "s3_bucket": "zappa-4ggvrd5tttqtqet",
+        "s3_bucket": "zappa-4ggvrd5tttqtqefafat",
         "aws_region":"us-east-1"
     }
 }

@@ -5,7 +5,7 @@ import boto3
 class apiAWS:
     def __init__(self, profile_name, table_name):
         # Create a Session with the profile that has our A Cloud Guru Credentials
-        self.session = boto3.Session(profile_name=profile_name)
+        self.session = boto3.Session()
 
         # Create a DynamoDB client and resource using the A Cloud Guru session 
         # Client and Resource do some of the same things, but some of the functions are exclusive to each other 

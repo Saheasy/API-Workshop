@@ -2,6 +2,8 @@
 from flask import Flask, jsonify, request
 from flask_restful import Api, Resource, reqparse, abort
 from aws_objects import apiAWS
+from dotenv import load_dotenv
+load_dotenv()
 
 # create Flask app
 app = Flask(__name__)
@@ -10,7 +12,7 @@ app = Flask(__name__)
 api = Api(app)
 
 aws = apiAWS('temp-AGC', 'API_Project')
-'''
+
 # Basic Flask API #
 # create 'database'
 apprentices = {
@@ -66,12 +68,11 @@ class apprentice(Resource):
 api.add_resource(apprentice_list, "/apprentices")
 api.add_resource(apprentice, "/apprentices/<int:apprentice_id>")
 
-'''
+
 
 # Flask API with DynamoDB
 # Initialized the apiAWS class, which checks for/creates a dynamodb
-#aws = apiAWS('temp-AGC', 'API_Project')
-'''
+
 aws_apprentice_POST_args = reqparse.RequestParser()
 aws_apprentice_POST_args.add_argument("nickname", type = str, help = "Nickname is required.", required = True)
 aws_apprentice_POST_args.add_argument("group", type = str, help = "Pathfinders Group is required.", required = True)
@@ -110,14 +111,9 @@ class AwsApprentice(Resource):
         aws.delete_data(apprentice_id)
         return f'{apprentice_id} has been deleted'
 
-api.add_resource(AwsApprenticeList, "/aws")
-#api.add_resource(AwsApprentice, "/aws/<string:apprentice_id>")
-'''
+api.add_resource(AwsApprenticeList, "/aws/")
+api.add_resource(AwsApprentice, "/aws/<string:apprentice_id>")
 
-@app.route("/aws/")
-def hello_world():
-    return "save me"
-    # return aws.info()
 
 # We only need this for local development.
 if __name__ == '__main__':
