@@ -66,7 +66,7 @@ class apiAWS:
             Item={
                 'full_name':full_name,
                 'nickname':nickname,
-                'pathfinders_group':group,
+                'group':group,
                 'location': location
             })
 

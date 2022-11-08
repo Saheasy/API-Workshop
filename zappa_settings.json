@@ -1,11 +1,10 @@
 {
     "dev": {
         "app_function": "app.app",
-        "aws_region": "us-east-1",
         "profile_name": "temp-AGC",
-        "project_name": "zappa-flask-tes",
+        "project_name": "api-workshop",
         "runtime": "python3.9",
-        "s3_bucket": "zappa-1j24439ru",
-        
+        "s3_bucket": "zappa-4ggvrd5tttqtqet",
+        "aws_region":"us-east-1"
     }
 }
