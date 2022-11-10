@@ -11,7 +11,7 @@ app = Flask(__name__)
 # create API object
 api = Api(app)
 
-aws = apiAWS('temp-AGC', 'API_Project')
+aws = apiAWS('AGC-credentials', 'API_Project')
 
 # Basic Flask API #
 # create 'database'
