@@ -1,5 +1,7 @@
 # Create and Deploy an API
 
+### Enable VPN if you haven't already
+
 ### Enable AdminGuard
 Log into Self Service and enable Admin Guard. 
 This will allow you to install software. 
@@ -58,7 +60,7 @@ api = Api(app)
 
 class apprentice_list(Resource):
     def get(self):
-        return {'1': {'name':'Edwin Duggirala', 'group': 'protozoic'}, '2': {'name':'Spencer Sahu', 'group': 'protozoic'},}
+        return {1: {'name':'Edwin Duggirala', 'group': 'protozoic'}, 2: {'name':'Spencer Sahu', 'group': 'protozoic'},}
 
 api.add_resource(apprentice_list, '/apprentices')
 
@@ -143,6 +145,72 @@ parser.add_argument('rate', type=int, help='Rate to charge for this resource')
 args = parser.parse_args()
 ```
 
+### Full Flask-RESTful Sample Program
+```
+from flask import Flask
+from flask_restful import reqparse, abort, Api, Resource
+
+app = Flask(__name__)
+api = Api(app)
+
+TODOS = {
+    'todo1': {'task': 'build an API'},
+    'todo2': {'task': '?????'},
+    'todo3': {'task': 'profit!'},
+}
+
+
+def abort_if_todo_doesnt_exist(todo_id):
+    if todo_id not in TODOS:
+        abort(404, message="Todo {} doesn't exist".format(todo_id))
+
+parser = reqparse.RequestParser()
+parser.add_argument('task')
+
+
+# Todo
+# shows a single todo item and lets you delete a todo item
+class Todo(Resource):
+    def get(self, todo_id):
+        abort_if_todo_doesnt_exist(todo_id)
+        return TODOS[todo_id]
+
+    def delete(self, todo_id):
+        abort_if_todo_doesnt_exist(todo_id)
+        del TODOS[todo_id]
+        return '', 204
+
+    def put(self, todo_id):
+        args = parser.parse_args()
+        task = {'task': args['task']}
+        TODOS[todo_id] = task
+        return task, 201
+
+
+# TodoList
+# shows a list of all todos, and lets you POST to add new tasks
+class TodoList(Resource):
+    def get(self):
+        return TODOS
+
+    def post(self):
+        args = parser.parse_args()
+        todo_id = int(max(TODOS.keys()).lstrip('todo')) + 1
+        todo_id = 'todo%i' % todo_id
+        TODOS[todo_id] = {'task': args['task']}
+        return TODOS[todo_id], 201
+
+##
+## Actually setup the Api resource routing here
+##
+api.add_resource(TodoList, '/todos')
+api.add_resource(Todo, '/todos/<todo_id>')
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
 ## Our Flask Application
 With the Argument parsing and some error handling. This is the final code. 
 ```
@@ -215,71 +283,6 @@ if __name__ == '__main__':
     app.run()
 ```
 
-### Full Flask-RESTful Sample Program
-```
-from flask import Flask
-from flask_restful import reqparse, abort, Api, Resource
-
-app = Flask(__name__)
-api = Api(app)
-
-TODOS = {
-    'todo1': {'task': 'build an API'},
-    'todo2': {'task': '?????'},
-    'todo3': {'task': 'profit!'},
-}
-
-
-def abort_if_todo_doesnt_exist(todo_id):
-    if todo_id not in TODOS:
-        abort(404, message="Todo {} doesn't exist".format(todo_id))
-
-parser = reqparse.RequestParser()
-parser.add_argument('task')
-
-
-# Todo
-# shows a single todo item and lets you delete a todo item
-class Todo(Resource):
-    def get(self, todo_id):
-        abort_if_todo_doesnt_exist(todo_id)
-        return TODOS[todo_id]
-
-    def delete(self, todo_id):
-        abort_if_todo_doesnt_exist(todo_id)
-        del TODOS[todo_id]
-        return '', 204
-
-    def put(self, todo_id):
-        args = parser.parse_args()
-        task = {'task': args['task']}
-        TODOS[todo_id] = task
-        return task, 201
-
-
-# TodoList
-# shows a list of all todos, and lets you POST to add new tasks
-class TodoList(Resource):
-    def get(self):
-        return TODOS
-
-    def post(self):
-        args = parser.parse_args()
-        todo_id = int(max(TODOS.keys()).lstrip('todo')) + 1
-        todo_id = 'todo%i' % todo_id
-        TODOS[todo_id] = {'task': args['task']}
-        return TODOS[todo_id], 201
-
-##
-## Actually setup the Api resource routing here
-##
-api.add_resource(TodoList, '/todos')
-api.add_resource(Todo, '/todos/<todo_id>')
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
-```
 
 
 ## Deploying your Flask Application to the Cloud
@@ -428,4 +431,53 @@ class apiAWS:
     #This deletes the entire table. Is not in the RESTFUL API
     def delete_table(self): 
         self.table.delete()
+```
+
+And between the last add_resource function and the `if __name__ == "__main__"` insert this code:
+```
+# Flask API with DynamoDB
+# Initialized the apiAWS class, which checks for/creates a dynamodb
+aws = apiAWS('AGC-credentials', 'API_Project')
+
+aws_apprentice_POST_args = reqparse.RequestParser()
+aws_apprentice_POST_args.add_argument("nickname", type = str, help = "Nickname is required.", required = True)
+aws_apprentice_POST_args.add_argument("group", type = str, help = "Pathfinders Group is required.", required = True)
+aws_apprentice_POST_args.add_argument("location", type = str)
+
+aws_apprentice_PUT_args = reqparse.RequestParser()
+aws_apprentice_PUT_args.add_argument("nickname", type = str)
+aws_apprentice_PUT_args.add_argument("group", type = str)
+aws_apprentice_PUT_args.add_argument("location", type = str)
+
+# create class for only the list of apprentices
+class AwsApprenticeList(Resource):
+    def get(self):
+        return aws.info()
+
+# create class for apprentice, make it a resource, get all data on apprentices
+class AwsApprentice(Resource):  
+
+    def get(self, apprentice_id):
+        return aws.get_data(apprentice_id)
+
+    def post(self, apprentice_id):
+        args = aws_apprentice_POST_args.parse_args()
+        if set(args) != {'nickname', 'group', 'location'}:
+            abort(400)
+        aws.post_data(apprentice_id, args['nickname'], args['group'], args['location'])
+        return args
+
+    def put(self, apprentice_id):
+        args = aws_apprentice_PUT_args.parse_args()
+        x = [ aws.put_data(apprentice_id, arg, args[arg]) for arg in args if args[arg] != None ]
+        print(x)
+        return f"Data Inserted {args}"
+
+    def delete(self, apprentice_id):
+        aws.delete_data(apprentice_id)
+        return f'{apprentice_id} has been deleted'
+
+api.add_resource(AwsApprenticeList, "/aws/")
+api.add_resource(AwsApprentice, "/aws/<string:apprentice_id>")
+
 ```
