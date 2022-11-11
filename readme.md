@@ -9,8 +9,13 @@ This will allow you to install software.
 ### Virtual Environment Discussion
 AWS Lambda only supports Python Versions up to to 3.9. As of such, our Python environment has to be 3.9. There are various ways to handle this, so I am choosing to use pyenv. 
 Install brew   
-`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
-
+`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`  
+Then we install pyenv using brew. 
+`brew install pyenv`  
+`echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc`  
+`echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc`  
+`echo 'eval "$(pyenv init -)"' >> ~/.zshrc`  
+`echo 'eval "$(pyenv init -)"' >> ~/.zshrc`  
 
 In VSCode, run `python3 venv venv` then `source venv/bin/activate`  
 We can now install our dependencies

@@ -1,10 +1,10 @@
 {
     "dev": {
         "app_function": "app.app",
-        "profile_name": "temp-AGC",
+        "aws_region": "us-east-1",
+        "profile_name": "AGC-credentials",
         "project_name": "api-workshop",
         "runtime": "python3.9",
-        "s3_bucket": "zappa-4ggvrd5tttqtqefafat",
-        "aws_region":"us-east-1"
+        "s3_bucket": "zappa-ofs334yl7-apiworkshop"
     }
 }
