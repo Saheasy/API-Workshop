@@ -16,7 +16,7 @@ Then we install pyenv using brew.
 `echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc`  
 `echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc`  
 `echo 'eval "$(pyenv init -)"' >> ~/.zshrc`  
-`eexec "$SHELL"`  
+`exec "$SHELL"`  
 
 We aren't really picky on what Python version we use, as long as it supports Lambda. So I am choosing 3.9.7
 ` pyenv install 3.9.7`
