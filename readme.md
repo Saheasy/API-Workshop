@@ -1,9 +1,22 @@
 # Create and Deploy an API
-## presented by Edwin D and Spencer S
+
+### Enable AdminGuard
+Log into Self Service and enable Admin Guard. 
+This will allow you to install software. 
 
 ### Virtual Environment Discussion
-AWS Lambda only supports Python Versions up to to 3.9. As of such, our Python environment has to be 3.9. There are various ways to handle this, it just all depends on whether or not we want to install Brew. 
+AWS Lambda only supports Python Versions up to to 3.9. As of such, our Python environment has to be 3.9. There are various ways to handle this, so I am choosing to use pyenv. 
+Install brew   
+`/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
 
+
+In VSCode, run `python3 venv venv` then `source venv/bin/activate`  
+We can now install our dependencies
+
+`pip3 install python-dotenv flask-restful zappa boto3`
+
+## Creating Flask Application
+Here is the [Flask RESTful documentation](https://flask-restful.readthedocs.io/en/latest/index.html) that we are referencing
 
 ### The most basic Flask program
 ```
@@ -15,6 +28,128 @@ app = Flask(__name__)
 @app.route("/")
 def hello():
     return "Hello, World!"
+```
+### Minimal Flask-RESTful program
+```
+from flask import Flask
+from flask_restful import Resource, Api
+
+app = Flask(__name__)
+api = Api(app)
+
+class HelloWorld(Resource):
+    def get(self):
+        return {'hello': 'world'}
+
+api.add_resource(HelloWorld, '/')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+### Using Resources to make Routing using Classes
+```
+from flask import Flask, request
+from flask_restful import Resource, Api
+
+app = Flask(__name__)
+api = Api(app)
+
+todos = {}
+
+class TodoSimple(Resource):
+    def get(self, todo_id):
+        return {todo_id: todos[todo_id]}
+
+    def put(self, todo_id):
+        todos[todo_id] = request.form['data']
+        return {todo_id: todos[todo_id]}
+
+api.add_resource(TodoSimple, '/<string:todo_id>')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+### Endpoints
+```
+api.add_resource(FirstClassName, '/url')
+api.add_resource(AnotherClassName,'/','/anotherURL')
+```
+
+### Argument Parsing
+```
+from flask_restful import reqparse
+#Returns arguments in a dictionary
+parser = reqparse.RequestParser()
+parser.add_argument('rate', type=int, help='Rate to charge for this resource')
+args = parser.parse_args()
+```
+
+### Full Flask-RESTful Sample Program
+```
+from flask import Flask
+from flask_restful import reqparse, abort, Api, Resource
+
+app = Flask(__name__)
+api = Api(app)
+
+TODOS = {
+    'todo1': {'task': 'build an API'},
+    'todo2': {'task': '?????'},
+    'todo3': {'task': 'profit!'},
+}
+
+
+def abort_if_todo_doesnt_exist(todo_id):
+    if todo_id not in TODOS:
+        abort(404, message="Todo {} doesn't exist".format(todo_id))
+
+parser = reqparse.RequestParser()
+parser.add_argument('task')
+
+
+# Todo
+# shows a single todo item and lets you delete a todo item
+class Todo(Resource):
+    def get(self, todo_id):
+        abort_if_todo_doesnt_exist(todo_id)
+        return TODOS[todo_id]
+
+    def delete(self, todo_id):
+        abort_if_todo_doesnt_exist(todo_id)
+        del TODOS[todo_id]
+        return '', 204
+
+    def put(self, todo_id):
+        args = parser.parse_args()
+        task = {'task': args['task']}
+        TODOS[todo_id] = task
+        return task, 201
+
+
+# TodoList
+# shows a list of all todos, and lets you POST to add new tasks
+class TodoList(Resource):
+    def get(self):
+        return TODOS
+
+    def post(self):
+        args = parser.parse_args()
+        todo_id = int(max(TODOS.keys()).lstrip('todo')) + 1
+        todo_id = 'todo%i' % todo_id
+        TODOS[todo_id] = {'task': args['task']}
+        return TODOS[todo_id], 201
+
+##
+## Actually setup the Api resource routing here
+##
+api.add_resource(TodoList, '/todos')
+api.add_resource(Todo, '/todos/<todo_id>')
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
 ```
 
 ## Deploying your Flask Application to the Cloud
@@ -31,10 +166,6 @@ Things that we need to do before we can run 'zappa init':
 - Start an A Cloud Guru AWS Sandbox to grab the secrets
 - Store secrets in both the credentials and in a .env
 - Setup a virtual environment with Python3.9 in your VSCode
-
-### Enable AdminGuard
-Log into Self Service and enable Admin Guard. 
-This will allow you to install AWS CLI. You can then proceed to downloading the AWS CLI Package.
 
 ### Install AWS CLI
 [Amazon's Tutorial on installing the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
@@ -68,4 +199,103 @@ Default region name [None]: us-east-1
 Default output format [None]: text
 ```
 
-### Implement virtual environment
+Create a new file called aws_objects.py and insert this code 
+
+```
+#Import the AWS SDK for Python
+import boto3
+
+#This is class with all of the AWS oriented code
+class apiAWS:
+    def __init__(self, profile_name, table_name):
+        # Create a Session with the profile that has our A Cloud Guru Credentials
+        self.session = boto3.Session()
+
+        # Create a DynamoDB client and resource using the A Cloud Guru session 
+        # Client and Resource do some of the same things, but some of the functions are exclusive to each other 
+        # Overall we try to use Resource when we can 
+        self.dynamodb_client = self.session.client('dynamodb', region_name='us-east-1')
+        self.dynamodb = self.session.resource('dynamodb', region_name='us-east-1')
+
+        ''' A List Comprehension that puts this code into a single line:
+        table = []
+        for db in self.dynamodb_client.list_tables()['TableNames']:
+            if db == table_name:
+                table.append(db)
+        '''
+        my_table = [ db for db in self.dynamodb_client.list_tables()['TableNames'] if db == table_name ]
+
+        # If there isn't anything in the list, then we need to create one. 
+        if my_table == []:
+            self.create(table_name)
+
+        # Assigned table to class variable
+        self.table = self.dynamodb.Table(table_name)
+        print(self.table)
+
+    def create(self, table_name):
+        # We create the table. It needs an unique key, which is what full_name is
+        # Provisioned Throughput is the amount of requests it can handle in a second
+        self.table = self.dynamodb.create_table(
+            TableName=table_name,
+            KeySchema=[
+                {
+                    'AttributeName': 'full_name',
+                    'KeyType': 'HASH'
+                },
+            ],
+            AttributeDefinitions=[
+                
+                {
+                    'AttributeName': 'full_name',
+                    'AttributeType': 'S'
+                },
+            ],
+            ProvisionedThroughput={
+                'ReadCapacityUnits': 100,
+                'WriteCapacityUnits': 100
+            }
+        )
+
+        # Wait until the table exists.
+        self.table.wait_until_exists()
+        
+    def info(self):
+        #Just to see what is in the table
+        return self.table.scan()['Items']
+
+    def post_data(self, full_name, nickname, group, location):
+        # This is the equilivant of a post request, as it overwrites everything that's assigned to the 'full_name'
+        self.table.put_item(
+            Item={
+                'full_name':full_name,
+                'nickname':nickname,
+                'group':group,
+                'location': location
+            })
+
+    #https://stackoverflow.com/questions/63497448/dynamodb-update-multiple-values
+    # This is a wee bit overcomplicated so I recommend reading this StackOverFlow article
+    # In order to not overwrite everything, we need to use the update command
+    # This function could have a workshop of it's own, but we just want to write data without delete the other values in our database
+    # There is a way to write a bunch of updates at once without calling the function multiple times but it gets a wee bit complicated
+    def put_data(self, full_name, key, value):
+        self.table.update_item(
+            Key={'full_name':full_name},
+            UpdateExpression= f'SET #KEY = :value',
+            ExpressionAttributeNames={ '#KEY':key},
+            ExpressionAttributeValues={ ':value':value  }
+        )
+    
+    #This fetches the data of whatever key is entered 
+    def get_data(self, full_name):
+        return self.table.get_item(Key={'full_name':full_name} )['Item']
+
+    #This deletes the key and data of whatever key is entered
+    def delete_data(self, full_name):
+        self.table.delete_item(Key={'full_name':full_name})
+
+    #This deletes the entire table. Is not in the RESTFUL API
+    def delete_table(self): 
+        self.table.delete()
+```
