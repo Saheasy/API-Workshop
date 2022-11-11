@@ -20,6 +20,7 @@ Then we install pyenv using brew.
 
 We aren't really picky on what Python version we use, as long as it supports Lambda. So I am choosing 3.9.7
 ` pyenv install 3.9.7`
+`pyenv local 3.9.7`
 Now that our version is correct, we can run our Virtual Environment as per normal. 
 In VSCode, run `python3 venv venv` then `source venv/bin/activate`  
 We can now install our dependencies
@@ -44,6 +45,11 @@ If you go to [`localhost:5000`](http://localhost:5000) you will see your "Hello,
 
 ## Our Flask Application
 With the Argument parsing and some error handling. This is the final code. 
+Curl Commands:
+curl localhost:5000/apprentices => GET list of all apprentices
+curl localhost:5000/apprentices/3 -d '{"name": "Will Harris", "group": "protozoic"}' -X POST -v -H "Content-Type: application/json" => POST new apprentice
+curl localhost:5000/apprentices/3 -d '{"name": "William Harris", "group": "protozoic"}' -X PUT -v -H "Content-Type: application/json" => PUT new changes to apprentice
+curl localhost:5000/apprentices/3 -X DELETE -v => DELETE individual apprentice by id
 ```
 # import relevant modules
 from flask import Flask
