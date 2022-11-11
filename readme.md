@@ -22,7 +22,7 @@ We aren't really picky on what Python version we use, as long as it supports Lam
 ` pyenv install 3.9.7`
 `pyenv local 3.9.7`
 Now that our version is correct, we can run our Virtual Environment as per normal. 
-In VSCode, run `python3 venv venv` then `source venv/bin/activate`  
+In VSCode, run `python3 -m venv venv` then `source venv/bin/activate`  
 We can now install our dependencies
 
 `pip3 install python-dotenv flask-restful zappa boto3`
