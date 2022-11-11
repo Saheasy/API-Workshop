@@ -1,6 +1,7 @@
 # Create and Deploy an API
 
 ### Enable VPN if you haven't already
+Reminder to start recording
 
 ### Enable AdminGuard
 Log into Self Service and enable Admin Guard. 
@@ -27,7 +28,7 @@ We can now install our dependencies
 
 ## Creating Flask Application
 Here is the [Flask RESTful documentation](https://flask-restful.readthedocs.io/en/latest/index.html) that we are referencing
-
+Make sure your main python file is in a python file named "app.py"
 ### The most basic Flask program
 ```
 # save this as app.py
@@ -40,202 +41,6 @@ def hello():
     return "Hello, World!"
 ```
 If you go to [`localhost:5000`](http://localhost:5000) you will see your "Hello, World"
-
-## Minimal Flask-RESTful program
-### Flask's Minimal Version
-```
-from flask import Flask
-from flask_restful import Resource, Api
-
-app = Flask(__name__)
-api = Api(app)
-
-class HelloWorld(Resource):
-    def get(self):
-        return {'hello': 'world'}
-
-api.add_resource(HelloWorld, '/')
-
-if __name__ == '__main__':
-    app.run(debug=True)
-```
-Curl Commands:     
-Get: `curl http://localhost:5000`  
-
-### Our Version
-```
-from flask import Flask
-from flask_restful import Resource, Api
-
-app = Flask(__name__)
-api = Api(app)
-
-class apprentice_list(Resource):
-    def get(self):
-        return {1: {'name':'Edwin Duggirala', 'group': 'protozoic'}, 2: {'name':'Spencer Sahu', 'group': 'protozoic'},}
-
-api.add_resource(apprentice_list, '/apprentices')
-
-if __name__ == '__main__':
-    app.run(debug=True)
-```
-Curl Commands:  
-Get: `curl http://localhost:5000`
-
-## Using Resources to make Routing using Classes
-### Flask's Minimal Routing
-```
-from flask import Flask, request
-from flask_restful import Resource, Api
-
-app = Flask(__name__)
-api = Api(app)
-
-todos = {}
-
-class TodoSimple(Resource):
-    def get(self, todo_id):
-        return {todo_id: todos[todo_id]}
-
-    def put(self, todo_id):
-        todos[todo_id] = "request.form['data']"
-        return {todo_id: todos[todo_id]}
-
-api.add_resource(TodoSimple, '/<string:todo_id>')
-
-if __name__ == '__main__':
-    app.run(debug=True)
-``` 
-Curl Commands:  
-PUT: `curl http://localhost:5000/todo1 -d "data=Remember the milk" -X PUT`  
-GET: 'curl http://localhost:5000/todo1'  
-
-### Our Version
-```
-# import relevant modules
-from flask import Flask
-from flask_restful import Api, Resource, reqparse, abort
-
-# create Flask app
-app = Flask(__name__)
-
-# create API object
-api = Api(app)
-
-# create 'database'
-apprentices = {
-            1: {"name": "Edwin Duggirala", "group": "protozoic"},
-            2: {"name": "Spencer Sahu", "group": "protzoic"}
-        }
-# create class for only the list of apprentices
-class apprentice_list(Resource):
-
-    def get(self):
-        return apprentices
-
-
-# create class for apprentice, make it a resource, get all data on apprentices
-class apprentice(Resource):  
-
-    def get(self, apprentice_id):
-        return apprentices[apprentice_id]
-    
-    def delete(self, apprentice_id):
-        del apprentices[apprentice_id]
-        return apprentices
-
-
-api.add_resource(apprentice_list, "/apprentices")
-api.add_resource(apprentice, "/apprentices/<int:apprentice_id>")
-
-# We only need this for local development.
-if __name__ == '__main__':
-    app.run()
-```
-DELETE: curl `localhost:5000/apprentices/1 -X DELETE`  
-GET: curl `localhost:5000/apprentices` and `localhost:5000/apprentices/1`   
-
-
-## Argument Parsing
-### Flask's Minimal Version
-```
-from flask_restful import reqparse
-#Returns arguments in a dictionary
-parser = reqparse.RequestParser()
-parser.add_argument('rate', type=int, help='Rate to charge for this resource')
-args = parser.parse_args()
-```
-
-### Full Flask-RESTful Sample Program
-```
-from flask import Flask
-from flask_restful import reqparse, abort, Api, Resource
-
-app = Flask(__name__)
-api = Api(app)
-
-TODOS = {
-    'todo1': {'task': 'build an API'},
-    'todo2': {'task': '?????'},
-    'todo3': {'task': 'profit!'},
-}
-
-
-def abort_if_todo_doesnt_exist(todo_id):
-    if todo_id not in TODOS:
-        abort(404, message="Todo {} doesn't exist".format(todo_id))
-
-parser = reqparse.RequestParser()
-parser.add_argument('task')
-
-
-# Todo
-# shows a single todo item and lets you delete a todo item
-class Todo(Resource):
-    def get(self, todo_id):
-        abort_if_todo_doesnt_exist(todo_id)
-        return TODOS[todo_id]
-
-    def delete(self, todo_id):
-        abort_if_todo_doesnt_exist(todo_id)
-        del TODOS[todo_id]
-        return '', 204
-
-    def put(self, todo_id):
-        args = parser.parse_args()
-        task = {'task': args['task']}
-        TODOS[todo_id] = task
-        return task, 201
-
-
-# TodoList
-# shows a list of all todos, and lets you POST to add new tasks
-class TodoList(Resource):
-    def get(self):
-        return TODOS
-
-    def post(self):
-        args = parser.parse_args()
-        todo_id = int(max(TODOS.keys()).lstrip('todo')) + 1
-        todo_id = 'todo%i' % todo_id
-        TODOS[todo_id] = {'task': args['task']}
-        return TODOS[todo_id], 201
-
-##
-## Actually setup the Api resource routing here
-##
-api.add_resource(TodoList, '/todos')
-api.add_resource(Todo, '/todos/<todo_id>')
-
-Curl Commands: 
-GET: `curl localhost:5000/apprentices` and `curl localhost:5000/apprentices/1`
-PUT: `curl localhost:5000/apprentices/3 -d ‘{“name”: “Will Harris”, “group”: “protozoic”}’ -X POST -v -H “Content-Type: application/json”`
-POST: `curl localhost:5000/apprentices/3 -d ‘{“name”: “William Harris”, “group”: “protozoic”}’ -X PUT -v -H “Content-Type: application/json”`
-DELETE: `curl localhost:5000/apprentices/3 -X DELETE`
-
-if __name__ == '__main__':
-    app.run(debug=True)
-```
 
 ## Our Flask Application
 With the Argument parsing and some error handling. This is the final code. 
@@ -276,7 +81,8 @@ class apprentice_list(Resource):
 class apprentice(Resource):  
 
     def get(self, apprentice_id):
-        return apprentices[apprentice_id]
+        try:
+            return apprentices[apprentice_id]
         except:
             abort(404, message="Apprentice ID not in database")
 
@@ -522,3 +328,4 @@ Does this look okay? (default 'y') [y/n]: `y`
 
 From here we can run: `zappa deploy dev` and it should work. If we want to make any changes, then we should run `zappa update dev`
 
+While we wait for this to deploy, Spencer will explain the DynamoDB code. 
