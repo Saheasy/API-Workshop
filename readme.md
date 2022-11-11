@@ -29,7 +29,9 @@ app = Flask(__name__)
 def hello():
     return "Hello, World!"
 ```
-### Minimal Flask-RESTful program
+
+## Minimal Flask-RESTful program
+### Flask's Minimal Version
 ```
 from flask import Flask
 from flask_restful import Resource, Api
@@ -46,8 +48,26 @@ api.add_resource(HelloWorld, '/')
 if __name__ == '__main__':
     app.run(debug=True)
 ```
+### Our Version
+```
+from flask import Flask
+from flask_restful import Resource, Api
 
-### Using Resources to make Routing using Classes
+app = Flask(__name__)
+api = Api(app)
+
+class apprentice_list(Resource):
+    def get(self):
+        return {'1': {'name':'Edwin Duggirala', 'group': 'protozoic'}, '2': {'name':'Spencer Sahu', 'group': 'protozoic'},}
+
+api.add_resource(apprentice_list, '/apprentices')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+## Using Resources to make Routing using Classes
+### Flask's Minimal Routing
 ```
 from flask import Flask, request
 from flask_restful import Resource, Api
@@ -70,20 +90,129 @@ api.add_resource(TodoSimple, '/<string:todo_id>')
 if __name__ == '__main__':
     app.run(debug=True)
 ```
-
-### Endpoints
+### Our Version
 ```
-api.add_resource(FirstClassName, '/url')
-api.add_resource(AnotherClassName,'/','/anotherURL')
+# import relevant modules
+from flask import Flask
+from flask_restful import Api, Resource, reqparse, abort
+
+# create Flask app
+app = Flask(__name__)
+
+# create API object
+api = Api(app)
+
+# create 'database'
+apprentices = {
+            1: {"name": "Edwin Duggirala", "group": "protozoic"},
+            2: {"name": "Spencer Sahu", "group": "protzoic"}
+        }
+# create class for only the list of apprentices
+class apprentice_list(Resource):
+
+    def get(self):
+        return apprentices
+
+
+# create class for apprentice, make it a resource, get all data on apprentices
+class apprentice(Resource):  
+
+    def get(self, apprentice_id):
+        return apprentices[apprentice_id]
+    
+    def delete(self, apprentice_id):
+        del apprentices[apprentice_id]
+        return apprentices
+
+
+api.add_resource(apprentice_list, "/apprentices")
+api.add_resource(apprentice, "/apprentices/<int:apprentice_id>")
+
+# We only need this for local development.
+if __name__ == '__main__':
+    app.run()
 ```
 
-### Argument Parsing
+## Argument Parsing
+### Flask's Minimal Version
 ```
 from flask_restful import reqparse
 #Returns arguments in a dictionary
 parser = reqparse.RequestParser()
 parser.add_argument('rate', type=int, help='Rate to charge for this resource')
 args = parser.parse_args()
+```
+
+## Our Flask Application
+With the Argument parsing and some error handling. This is the final code. 
+```
+# import relevant modules
+from flask import Flask
+from flask_restful import Api, Resource, reqparse, abort
+
+# create Flask app
+app = Flask(__name__)
+
+# create API object
+api = Api(app)
+
+# Basic Flask API #
+# create 'database'
+apprentices = {
+            1: {"name": "Edwin Duggirala", "group": "protozoic"},
+            2: {"name": "Spencer Sahu", "group": "protzoic"}
+        }
+
+apprentice_POST_args = reqparse.RequestParser()
+apprentice_POST_args.add_argument("name", type = str, help = "Name is required.", required = True)
+apprentice_POST_args.add_argument("group", type = str, help = "Name is required.", required = True)
+
+apprentice_PUT_args = reqparse.RequestParser()
+apprentice_PUT_args.add_argument("name", type = str)
+apprentice_PUT_args.add_argument("group", type = str)
+
+# create class for only the list of apprentices
+class apprentice_list(Resource):
+
+    def get(self):
+        return apprentices
+
+
+# create class for apprentice, make it a resource, get all data on apprentices
+class apprentice(Resource):  
+
+    def get(self, apprentice_id):
+        return apprentices[apprentice_id]
+        except:
+            abort(404, message="Apprentice ID not in database")
+
+    def post(self, apprentice_id):
+        args = apprentice_POST_args.parse_args()
+        if apprentice_id in apprentices:
+            abort(409, message="Apprentice information already exists")
+        apprentices[apprentice_id] = {"name": args["name"], "group": args["group"]}
+        return apprentices[apprentice_id]
+
+    def put(self, apprentice_id):
+        args = apprentice_PUT_args.parse_args()
+        if apprentice_id not in apprentices:
+            abort(404, message = "Apprentice does not exist. Cannot update.")
+        if args["name"]:
+            apprentices[apprentice_id]["name"] = args["name"]
+        if args["group"]:
+            apprentices[apprentice_id]["group"] = args["group"]
+        return apprentices[apprentice_id]
+
+    def delete(self, apprentice_id):
+        del apprentices[apprentice_id]
+        return apprentices
+
+api.add_resource(apprentice_list, "/apprentices")
+api.add_resource(apprentice, "/apprentices/<int:apprentice_id>")
+
+# We only need this for local development.
+if __name__ == '__main__':
+    app.run()
 ```
 
 ### Full Flask-RESTful Sample Program
@@ -151,6 +280,7 @@ api.add_resource(Todo, '/todos/<todo_id>')
 if __name__ == '__main__':
     app.run(debug=True)
 ```
+
 
 ## Deploying your Flask Application to the Cloud
 I am using [Zappa](https://github.com/zappa/Zappa) to deploy the Flask code to the AWS Cloud. Zappa will set everything up in Lambda and API Gateway.   
