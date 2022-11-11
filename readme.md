@@ -10,13 +10,16 @@ This will allow you to install software.
 AWS Lambda only supports Python Versions up to to 3.9. As of such, our Python environment has to be 3.9. There are various ways to handle this, so I am choosing to use pyenv. 
 Install brew   
 `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`  
-Then we install pyenv using brew. 
+Then we install pyenv using brew.   
 `brew install pyenv`  
 `echo 'export PYENV_ROOT="$HOME/.pyenv"' >> ~/.zshrc`  
 `echo 'export PATH="$PYENV_ROOT/bin:$PATH"' >> ~/.zshrc`  
 `echo 'eval "$(pyenv init -)"' >> ~/.zshrc`  
-`echo 'eval "$(pyenv init -)"' >> ~/.zshrc`  
+`eexec "$SHELL"`  
 
+We aren't really picky on what Python version we use, as long as it supports Lambda. So I am choosing 3.9.7
+` pyenv install 3.9.7`
+Now that our version is correct, we can run our Virtual Environment as per normal. 
 In VSCode, run `python3 venv venv` then `source venv/bin/activate`  
 We can now install our dependencies
 
@@ -36,6 +39,7 @@ app = Flask(__name__)
 def hello():
     return "Hello, World!"
 ```
+If you go to [`localhost:5000`](http://localhost:5000) you will see your "Hello, World"
 
 ## Minimal Flask-RESTful program
 ### Flask's Minimal Version
@@ -55,6 +59,9 @@ api.add_resource(HelloWorld, '/')
 if __name__ == '__main__':
     app.run(debug=True)
 ```
+Curl Commands:     
+Get: `curl http://localhost:5000`  
+
 ### Our Version
 ```
 from flask import Flask
@@ -72,6 +79,8 @@ api.add_resource(apprentice_list, '/apprentices')
 if __name__ == '__main__':
     app.run(debug=True)
 ```
+Curl Commands:  
+Get: `curl http://localhost:5000`
 
 ## Using Resources to make Routing using Classes
 ### Flask's Minimal Routing
@@ -89,14 +98,18 @@ class TodoSimple(Resource):
         return {todo_id: todos[todo_id]}
 
     def put(self, todo_id):
-        todos[todo_id] = request.form['data']
+        todos[todo_id] = "request.form['data']"
         return {todo_id: todos[todo_id]}
 
 api.add_resource(TodoSimple, '/<string:todo_id>')
 
 if __name__ == '__main__':
     app.run(debug=True)
-```
+``` 
+Curl Commands:  
+PUT: `curl http://localhost:5000/todo1 -d "data=Remember the milk" -X PUT`  
+GET: 'curl http://localhost:5000/todo1'  
+
 ### Our Version
 ```
 # import relevant modules
@@ -139,6 +152,9 @@ api.add_resource(apprentice, "/apprentices/<int:apprentice_id>")
 if __name__ == '__main__':
     app.run()
 ```
+DELETE: curl `localhost:5000/apprentices/1 -X DELETE`  
+GET: curl `localhost:5000/apprentices` and `localhost:5000/apprentices/1`   
+
 
 ## Argument Parsing
 ### Flask's Minimal Version
@@ -211,6 +227,11 @@ class TodoList(Resource):
 api.add_resource(TodoList, '/todos')
 api.add_resource(Todo, '/todos/<todo_id>')
 
+Curl Commands: 
+GET: `curl localhost:5000/apprentices` and `curl localhost:5000/apprentices/1`
+PUT: `curl localhost:5000/apprentices/3 -d ‘{“name”: “Will Harris”, “group”: “protozoic”}’ -X POST -v -H “Content-Type: application/json”`
+POST: `curl localhost:5000/apprentices/3 -d ‘{“name”: “William Harris”, “group”: “protozoic”}’ -X PUT -v -H “Content-Type: application/json”`
+DELETE: `curl localhost:5000/apprentices/3 -X DELETE`
 
 if __name__ == '__main__':
     app.run(debug=True)
@@ -486,3 +507,18 @@ api.add_resource(AwsApprenticeList, "/aws/")
 api.add_resource(AwsApprentice, "/aws/<string:apprentice_id>")
 
 ```
+
+We should click run to see if everything works as it should on our local machine. Then we can deploy the file via Zappa.    
+`zappa init`
+
+You should fill out as following:  
+What do you want to call this environment (default 'dev'): `dev`  
+We found the following profiles: default, and AGC-credentials. Which would you like us to use? (default 'default'): `AGC-credentials`  
+What do you want to call your bucket? (default 'zappa-5jpmga1hm'): `zappa-5jpmga1hm-api-workshop`  
+I choose the default name, then add a descriptive term at the end. Because all S3 buckets need to be unique, this helps it be unique.   
+Where is your app's function? (default 'app.app'): `app.app`  
+Would you like to deploy this application globally? (default 'n') [y/n/(p)rimary]: `n`  
+Does this look okay? (default 'y') [y/n]: `y`  
+
+From here we can run: `zappa deploy dev` and it should work. If we want to make any changes, then we should run `zappa update dev`
+
