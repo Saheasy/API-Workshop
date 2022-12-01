@@ -5,6 +5,6 @@
         "profile_name": "AGC-credentials",
         "project_name": "api-workshop",
         "runtime": "python3.9",
-        "s3_bucket": "zappa-ofs334yl7-apiworkshop"
+        "s3_bucket": "zappa-w9smc9793-api-workshop"
     }
 }

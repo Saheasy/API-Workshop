@@ -11,8 +11,6 @@ app = Flask(__name__)
 # create API object
 api = Api(app)
 
-aws = apiAWS('AGC-credentials', 'API_Project')
-
 # Basic Flask API #
 # create 'database'
 apprentices = {
@@ -72,6 +70,7 @@ api.add_resource(apprentice, "/apprentices/<int:apprentice_id>")
 
 # Flask API with DynamoDB
 # Initialized the apiAWS class, which checks for/creates a dynamodb
+aws = apiAWS('AGC-credentials', 'API_Project')
 
 aws_apprentice_POST_args = reqparse.RequestParser()
 aws_apprentice_POST_args.add_argument("nickname", type = str, help = "Nickname is required.", required = True)

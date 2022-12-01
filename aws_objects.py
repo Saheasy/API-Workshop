@@ -38,7 +38,7 @@ class apiAWS:
                 {
                     'AttributeName': 'full_name',
                     'KeyType': 'HASH'
-                },
+                }
             ],
             AttributeDefinitions=[
                 
